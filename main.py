@@ -1,5 +1,5 @@
 #Blackjack Casion
-# (V 2.0.0)
+# (V 2.2.0)
 # By: James Denbow
 
 # TABLE OF CONTENTS ##########################################################################################################################
@@ -28,6 +28,7 @@ from tkinter import *
 import random
 import time
 import sys
+import copy
 ##############################################################################################################################################
 
 # OBJECTS ####################################################################################################################################
@@ -98,6 +99,112 @@ class Deck:
 
 ##############################################################################################################################################
 
+#Returns suggested move based on Chart Strategy
+def chart_strategy_calc(current_player, upcard):
+    #If double return 'd'
+    #If hit return 'h'
+    #If stay return 's'
+    #If double / stay return 'z'
+    #If split return 'p'
+
+    #Check for split
+    if current_player.status == 'user':
+        if len(current_player.current_hand) == 2:
+            if current_player.current_hand[0] == current_player.current_hand[1]:
+                card_score = current_player.current_hand[0]
+                if card_score != 10 and card_score != 4 and card_score != 5:
+                    if card_score == 11 or card_score == 1:
+                        return 'p'
+                    elif card_score == 8:
+                        return 'p'
+                    elif card_score == 2 or card_score == 3:
+                        if upcard == 4 or upcard == 5 or upcard == 6 or upcard == 7:
+                            return 'p'
+                        else:
+                            return 'h'
+                    elif card_score == 6:
+                        if upcard == 3 or upcard == 4 or upcard == 5 or upcard == 6:
+                            return 'p'
+                        else:
+                            return 'h'
+                    elif card_score == 7:
+                        if upcard != 1 and upcard < 8:
+                            return 'p'
+                        else:
+                            return 'h'
+                    elif card_score == 9:
+                        if upcard == 7 or upcard == 10 or upcard == 11 or upcard == 1:
+                            return 's'
+                        else:
+                            return 'p'
+            elif current_player.current_hand[0] == 11 and current_player.current_hand[1] == 1:
+                return 'p'
+            elif current_player.current_hand[0] == 11 and current_player.current_hand[1] == 1:
+                return 'p'
+
+    #Check soft totals
+    player_score = sum(current_player.current_hand)
+    if 11 in current_player.current_hand:
+        if player_score == 20:
+            return 's'
+        elif player_score == 19:
+            if upcard == 6:
+                return 'z'
+            else:
+                return 's'
+        elif player_score == 18:
+            if upcard > 8 or upcard == 1:
+                return 'h'
+            elif upcard == 7 or upcard == 8:
+                return 's'
+            else:
+                return 'z'
+        elif player_score == 17:
+            if upcard == 3 or upcard == 4 or upcard == 5 or upcard == 6:
+                return 'd'
+            else:
+                return 'h'
+        elif player_score == 16 or player_score == 15:
+            if upcard == 4 or upcard == 5 or upcard == 6:
+                return 'd'
+            else:
+                return 'h'
+        elif player_score == 14 or player_score == 13:
+            if upcard == 5 or upcard == 6:
+                return 'd'
+            else:
+                return 'h'
+
+    #Check hard totals
+    else:
+        if player_score >= 17:
+            return 's'
+        elif player_score == 16 or player_score == 15 or player_score == 14 or player_score == 13:
+            if upcard < 7 and upcard != 1:
+                return 's'
+            else:
+                return 'h'
+        elif player_score == 12:
+            if upcard == 4 or upcard == 5 or upcard == 6:
+                return 's'
+            else:
+                return 'h'
+        elif player_score == 11:
+            return 'd'
+        elif player_score == 10:
+            if upcard > 9 or upcard == 1:
+                return 'h'
+            else:
+                return 'd'
+        elif player_score == 9:
+            if upcard == 3 or upcard == 4 or upcard == 5 or upcard == 6:
+                return 'd'
+            else:
+                return 'h'
+        elif player_score <= 8:
+            return 'h'
+
+
 #Function ends round and displays results
 def end_round(dealer, playerlist, round_deck):
     dealer_score = sum(dealer.current_hand)
@@ -106,11 +213,7 @@ def end_round(dealer, playerlist, round_deck):
         player_score = sum(i.current_hand)
         player_length = len(i.current_hand)
 
-        if dealer_score > 21 and player_score <= 21:
-            i.money += int(2 * i.current_bet)
-        elif player_score > 21:
-            i.money = i.money
-        elif dealer_score == 21 and dealer_score == player_score:
+        if dealer_score == 21 and dealer_score == player_score:
             if dealer_length == 2 and player_length == 2:
                 i.money += i.current_bet
             elif dealer_length == 2:
@@ -123,6 +226,10 @@ def end_round(dealer, playerlist, round_deck):
             i.money = i.money
         elif player_score == 21 and player_length == 2:
             i.money += int(2.5 * i.current_bet)
+        elif dealer_score > 21 and player_score <= 21:
+            i.money += int(2 * i.current_bet)
+        elif player_score > 21:
+            i.money = i.money
         elif dealer_score == player_score:
             i.money += i.current_bet
         elif player_score > dealer_score:
@@ -132,6 +239,7 @@ def end_round(dealer, playerlist, round_deck):
 
     condition = 'ERROR'
     index = 0
+    user_index = 0
     for i in playerlist:
         if i.status == 'user':
             user_index = index
@@ -140,11 +248,7 @@ def end_round(dealer, playerlist, round_deck):
     player_score = sum(playerlist[user_index].current_hand)
     player_length = len(playerlist[user_index].current_hand)
 
-    if dealer_score > 21 and player_score <= 21:
-        condition = 'WIN - DEALER BUST'
-    elif player_score > 21:
-        condition = 'LOSS - BUST'
-    elif dealer_score == 21 and dealer_score == player_score:
+    if dealer_score == 21 and dealer_score == player_score:
         if dealer_length == 2 and player_length == 2:
             condition = 'PUSH'
         elif dealer_length == 2:
@@ -157,6 +261,10 @@ def end_round(dealer, playerlist, round_deck):
         condition = 'LOSS - DEALER BLACKJACK'
     elif player_score == 21 and player_length == 2:
         condition = 'WIN - BLACKJACK'
+    elif dealer_score > 21 and player_score <= 21:
+        condition = 'WIN - DEALER BUST'
+    elif player_score > 21:
+        condition = 'LOSS - BUST'
     elif dealer_score == player_score:
         condition = 'PUSH'
     elif player_score > dealer_score:
@@ -180,45 +288,13 @@ def end_round(dealer, playerlist, round_deck):
     return condition, player_money, temp_playerlist
 
 
-def statistic_calc(round_deck, downcard, playerlist, index_player):
-    unknown_deck = round_deck.standard_deck
-    if downcard != 0:
-        unknown_deck.append(downcard)
-    curbet = "Bet - $" + str(playerlist[index_player].current_bet)
-    #Calculate bust on hit
-    bustable_count = 0
-    if 11 in playerlist[index_player].current_hand:
-        player_score_bust = 31 - sum(playerlist[index_player].current_hand)
-    else:
-        player_score_bust = 21 - sum(playerlist[index_player].current_hand)
-    counter = 0
-    while counter < len(unknown_deck):
-        if unknown_deck[counter] == 11:
-            if player_score_bust < 1:
-                bustable_count += 1
-        else:
-            if player_score_bust < unknown_deck[counter]:
-                bustable_count += 1
-        counter += 1
-    bust_perc = int((bustable_count / len(unknown_deck)) * 100)
-    bust_string = "    Bust: " + str(bust_perc) + "%"
-    hit_win = "    Win: " + str(playerlist[index_player].current_hand) + "," + str(playerlist[index_player].current_hand_card)
-    hit_push = "    Push: " + str(sum(playerlist[index_player].current_hand))
-
-    statisticFrame = Frame(window, width=375, height= 710, bg="#1b1b1b")
-    Label(statisticFrame, text=playerlist[index_player].name, bg="#1b1b1b", fg="white", font="none 23 bold", width=20).grid(row=0)
-    Label(statisticFrame, text=curbet, bg="#1b1b1b", fg="white", font="none 23 bold", width=20).grid(row=1)
-    Label(statisticFrame, text=" On Hit -", bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=2, pady=(100,0))
-    Label(statisticFrame, text=hit_win, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=3)
-    Label(statisticFrame, text=hit_push, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=4)
-    Label(statisticFrame, text=bust_string, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=5)
-    Label(statisticFrame, text=" On Stay -", bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=6, pady=(30,0))
-    Label(statisticFrame, text="    Win: ", bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=7)
-    Label(statisticFrame, text="    Push: ", bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=8)
-    Label(statisticFrame, text=" Reccomend: ", bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=9, pady=(30,100))
+def exitFunc():
+    window.destroy()
+    _thread.interrupt_main()
+    os._exit
 
 
-def playerhit(round_deck, downcard, playerlist, index_player, currentplayer, frame):
+def playerhit(round_deck, downcard, playerlist, index_player, currentplayer, frame, upcard):
     round_deck.deal(currentplayer)
     if currentplayer.name == 'dealer':
         cardname = "img/" + currentplayer.current_hand_card[-1] + ".gif"
@@ -243,33 +319,192 @@ def playerhit(round_deck, downcard, playerlist, index_player, currentplayer, fra
     if sum(currentplayer.current_hand) > 21 and 11 in currentplayer.current_hand:
         currentplayer.current_hand.remove(11)
         currentplayer.current_hand.append(1)
-    #statistic_calc(round_deck, downcard, playerlist, index_player)
 
 
-def cpu_beginner(current_player, deck, downcard, playerlist, index_player, frame):
+def cpu_beginner(current_player, deck, downcard, playerlist, index_player, frame, upcard):
     #Deal as long as player hand is not 11 or higher
     while sum(current_player.current_hand) < 11:
-        playerhit(deck, downcard, playerlist, index_player, current_player, frame)
+        playerhit(deck, downcard, playerlist, index_player, current_player, frame, upcard)
         #If player has busted stop dealing
         if sum(current_player.current_hand) > 21:
             return
 
 
-def cpu_normal(current_player, deck, downcard, playerlist, index_player, frame):
+def cpu_normal(current_player, deck, downcard, playerlist, index_player, frame, upcard):
     #Deal as long as player hand is not 17 or higher
     while sum(current_player.current_hand) <= 17:
         #Hit on a soft 17 but not a hard 17
         if current_player.current_hand == 17:
             if 11 in current_player.current_hand:
-                playerhit(deck, downcard, playerlist, index_player, current_player, frame)
+                playerhit(deck, downcard, playerlist, index_player, current_player, frame, upcard)
             else:
                 return
         else:
-            playerhit(deck, downcard, playerlist, index_player, current_player, frame)
+            playerhit(deck, downcard, playerlist, index_player, current_player, frame, upcard)
         #If player has busted stop dealing
         if sum(current_player.current_hand) > 21:
             return
 
+
+def cpu_expert(current_player, deck, downcard, playerlist, index_player, frame, upcard):
+    action = chart_strategy_calc(current_player, upcard)
+    if action == 'h' or action == 'd':
+        playerhit(deck, downcard, playerlist, index_player, current_player, frame, upcard)
+    else:
+        return
+
+
+def simulator(round_deck, downcard, playerlist, index_player, upcard, condition, dealer):
+    counter = 0
+    result_list = []
+    loss_count = 0
+    win_count = 0
+    push_count = 0
+    while counter < 100:
+        simulator_deck = copy.deepcopy(round_deck)
+        simulator_playerlist = copy.deepcopy(playerlist)
+        simulator_player_index = index_player
+        simulator_dealer = copy.deepcopy(dealer)
+
+        simulator_deck.shuffle()
+
+        if condition == 'h':
+            sim_condition = 'h'
+            while sim_condition == 'h' or sim_condition == 'd':
+                simulator_deck.deal(simulator_playerlist[simulator_player_index])
+                sim_condition = chart_strategy_calc(simulator_playerlist[simulator_player_index], upcard)
+
+        inner_counter = simulator_player_index
+        while inner_counter < len(simulator_playerlist):
+            if simulator_playerlist[inner_counter].status == 'beginner':
+                while sum(simulator_playerlist[inner_counter].current_hand) < 11:
+                    simulator_deck.deal(simulator_playerlist[inner_counter])
+            elif simulator_playerlist[inner_counter].status == 'expert':
+                sim_condition_cpu = 'h'
+                while sim_condition_cpu == 'h' or sim_condition_cpu == 'd':
+                    sim_condition_cpu = chart_strategy_calc(simulator_playerlist[inner_counter], upcard)
+                    if sim_condition_cpu == 'h' or sim_condition_cpu == 'd':
+                        simulator_deck.deal(simulator_playerlist[inner_counter])
+            else:
+                while sum(simulator_playerlist[inner_counter].current_hand) < 17:
+                    simulator_deck.deal(simulator_playerlist[inner_counter])
+            inner_counter += 1
+
+        while sum(simulator_dealer.current_hand) < 17:
+            simulator_deck.deal(simulator_dealer)
+
+        player_score = sum(simulator_playerlist[simulator_player_index].current_hand)
+        player_length = len(simulator_playerlist[simulator_player_index].current_hand)
+        dealer_score = sum(simulator_dealer.current_hand)
+        dealer_length = len(simulator_dealer.current_hand)
+
+        if dealer_score == 21 and dealer_score == player_score:
+            if dealer_length == 2 and player_length == 2:
+                push_count += 1
+            elif dealer_length == 2:
+                loss_count += 1
+            elif player_length == 2:
+                win_count += 1
+            else:
+                push_count += 1
+        elif dealer_score == 21 and dealer_length == 2:
+            loss_count += 1
+        elif player_score == 21 and player_length == 2:
+            win_count += 1
+        elif dealer_score > 21 and player_score <= 21:
+            win_count += 1
+        elif player_score > 21:
+            loss_count += 1
+        elif dealer_score == player_score:
+            push_count += 1
+        elif player_score > dealer_score:
+            win_count += 1
+        elif player_score < dealer_score:
+            loss_count += 1
+        counter += 1
+        del simulator_playerlist
+        del simulator_deck
+        del simulator_dealer
+        del simulator_player_index
+    return win_count, push_count
+
+
+def statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer):
+    unknown_deck = round_deck.standard_deck
+    if downcard != 0:
+        unknown_deck.append(downcard)
+    curbet = "Bet - $" + str(playerlist[index_player].current_bet)
+
+    #Calculate bust on hit
+    bustable_count = 0
+    if 11 in playerlist[index_player].current_hand:
+        player_score_bust = 31 - sum(playerlist[index_player].current_hand)
+    else:
+        player_score_bust = 21 - sum(playerlist[index_player].current_hand)
+    counter = 0
+    while counter < len(unknown_deck):
+        if unknown_deck[counter] == 11:
+            if player_score_bust < 1:
+                bustable_count += 1
+        else:
+            if player_score_bust < unknown_deck[counter]:
+                bustable_count += 1
+        counter += 1
+    bust_perc = int((bustable_count / len(unknown_deck)) * 100)
+    bust_string = "    Bust: " + str(bust_perc) + "%"
+
+    #Find reccomendation
+    recom = ""
+    re_value = chart_strategy_calc(playerlist[index_player], upcard)
+    if re_value == 'h':
+        recom = "HIT"
+    elif re_value == 's':
+        recom == "STAY"
+    elif re_value == 'd' or re_value == 'z':
+        recom == "DOUBLE"
+    elif re_value == 'p':
+        recom == "SPLIT"
+    else:
+        recom == "ERROR"
+    recom_out = " Reccomend: " + recom
+
+    h_return_perc_w, h_return_perc_d = simulator(round_deck, downcard, playerlist, index_player, upcard, 'h', dealer)
+    s_return_perc_w, s_return_perc_d = simulator(round_deck, downcard, playerlist, index_player, upcard, 's', dealer)
+    if h_return_perc_w == 100:
+        h_return_perc_w = 99
+    if h_return_perc_d == 100:
+        h_return_perc_d = 99
+    if s_return_perc_w == 100:
+        s_return_perc_w = 99
+    if s_return_perc_d == 100:
+        s_return_perc_d = 99
+    hit_win = "    Win: " + str(h_return_perc_w) + "%"
+    hit_push = "    Push: " + str(h_return_perc_d) + "%"
+    stay_win = "    Win: " + str(s_return_perc_w) + "%"
+    stay_push = "    Push: " + str(s_return_perc_d) + "%"
+
+    #Display statistics
+    statisticFrame = Frame(window, width=375, height= 710, bg="#1b1b1b")
+    statisticFrame.place(anchor=SE, relx=1, rely=0.96)
+    Label(statisticFrame, text=playerlist[index_player].name, bg="#1b1b1b", fg="white", font="none 23 bold", width=20).grid(row=0)
+    Label(statisticFrame, text=curbet, bg="#1b1b1b", fg="white", font="none 23 bold", width=20).grid(row=1)
+    Label(statisticFrame, text=" On Hit -", bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=2, pady=(100,0))
+    Label(statisticFrame, text=hit_win, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=3)
+    Label(statisticFrame, text=hit_push, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=4)
+    Label(statisticFrame, text=bust_string, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=5)
+    Label(statisticFrame, text=" On Stay -", bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=6, pady=(30,0))
+    Label(statisticFrame, text=stay_win, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=7)
+    Label(statisticFrame, text=stay_push, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=8)
+    Label(statisticFrame, text=recom_out, bg="#1b1b1b", fg="white", font="none 23 bold", width=20, anchor="w").grid(row=9, pady=(30,100))
+    exitButtonsFrame = Frame(statisticFrame, bg="#1b1b1b")
+    exitButtonsFrame.grid(row=10, pady=(100,10))
+    exitButton = Button(exitButtonsFrame, text="X", font="none 23 bold", command=exitFunc)
+    exitButton.grid(row=0, column=2, padx=(10,10))
+
+
+def busted(user, hitButton):
+    if sum(user.current_hand) >= 21:
+        hitButton.grid_remove()
 
 # BLACKJACK ROUND MANAGER ####################################################################################################################
 
@@ -310,6 +545,7 @@ def blackjack_round(playerlist):
     #Initialize Dealer
     dealer = Player('dealer', 1000000, 'normal')
     downcard = 0
+    upcard = 0
 
     #Find index of User in playerlist
     index_player = 0
@@ -322,17 +558,15 @@ def blackjack_round(playerlist):
     #Deal
     for i in playerlist:
         round_deck.deal(i)
-        #statistic_calc(round_deck, downcard, playerlist, index_player)
     #Give dealer his down-card
     round_deck.deal(dealer)
     downcard = dealer.current_hand[0]
     downcard_suit = dealer.current_hand_card[0]
     for i in playerlist:
         round_deck.deal(i)
-        #statistic_calc(round_deck, downcard, playerlist, index_player)
     #Give dealer his up-card
     round_deck.deal(dealer)
-    #statistic_calc(round_deck, downcard, playerlist, index_player)
+    upcard = dealer.current_hand[1]
 
     #Create main round screen
     #Create background
@@ -408,26 +642,22 @@ def blackjack_round(playerlist):
     player_count = 0
     while player_count < index_player:
         if playerlist[player_count].status == 'beginner':
-            cpu_beginner(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers)
+            cpu_beginner(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers, upcard)
         elif playerlist[player_count].status == 'expert':
-            cpu_expert(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers)
+            cpu_expert(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers, upcard)
         else:
-            cpu_normal(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers)
+            cpu_normal(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers, upcard)
         player_count += 1
 
     #Players turn
-    #statistic_calc(round_deck, downcard, playerlist, index_player)
+    statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer)
     #Player action button
     actionFrame = Frame(window, width=230, height=215, bg="#43ac35")
     actionFrame.place(anchor=SW, relx=0.01, rely=0.95)
-    hitButton = Button(actionFrame, text="HIT", bg='green', fg='white', font="none 20 bold", width=13, command=lambda: playerhit(round_deck, downcard, playerlist, index_player, playerlist[index_player], playercards))
+    hitButton = Button(actionFrame, text="HIT", bg='green', fg='white', font="none 20 bold", width=13, command=lambda: [playerhit(round_deck, downcard, playerlist, index_player, playerlist[index_player], playercards, upcard), busted(playerlist[index_player], hitButton), statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer)])
     hitButton.grid(row=0)
     wait_stay = IntVar()
-    stayButton = Button(actionFrame, text="STAY", bg='red', fg='white', font="none 20 bold", width=13, command=lambda: [wait_stay.set(1),hitButton.grid_remove(), stayButton.grid_remove()])
-    if sum(playerlist[index_player].current_hand) >= 21: ###############################################################################################################################################################################################################################
-        wait_stay.set(1)
-        hitButton.grid_remove()
-        stayButton.grid_remove()
+    stayButton = Button(actionFrame, text="STAY", bg='red', fg='white', font="none 20 bold", width=13, command=lambda: [wait_stay.set(1),hitButton.grid_remove(),stayButton.grid_remove()])
     stayButton.grid(row=1)
     stayButton.wait_variable(wait_stay)
     #doubleButton = Button(actionFrame, text="DOUBLE", bg='blue', fg='white', font="none 20 bold", width=13).grid(row=2)
@@ -437,16 +667,15 @@ def blackjack_round(playerlist):
     player_count += 1
     while player_count < len(playerlist):
         if playerlist[player_count].status == 'beginner':
-            cpu_beginner(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers)
+            cpu_beginner(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers, upcard)
         elif playerlist[player_count].status == 'expert':
-            cpu_expert(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers)
+            cpu_expert(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers, upcard)
         else:
-            cpu_normal(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers)
-        #statistic_calc(round_deck, downcard, playerlist, index_player)
+            cpu_normal(playerlist[player_count], round_deck, downcard, playerlist, index_player, cpuplayers, upcard)
         player_count += 1
 
     #Dealers turn
-    cpu_normal(dealer, round_deck, downcard, playerlist, index_player, dealercards)
+    cpu_normal(dealer, round_deck, downcard, playerlist, index_player, dealercards, upcard)
 
     #Flip the dealers downcard
     downcard_file = "img/" + downcard_suit + ".gif"
@@ -476,7 +705,7 @@ def game_manager(playerlist, playerMoneyTracker):
     #Allows the player to continue playing rounds of blackjack until player is out of money
     while playerMoneyTracker > 0:
         playerMoneyTracker, temp_playerlist = blackjack_round(playerlist)
-        playerlist = temp_playerlist
+        playerlist = copy.deepcopy(temp_playerlist)
 
     #After the game is over display game over
     #Create background
@@ -647,7 +876,7 @@ def splash_screen():
 
 # MAIN FUNCTION ##############################################################################################################################
 window = Tk()
-window.title("Blackjack Casino (V 1.0.0)")
+window.title("Blackjack Casino (V 2.2.0)")
 window.configure(background="black")
 window.geometry('1920x1080')
 
