@@ -1,5 +1,5 @@
 #Blackjack Casion
-# (V 2.2.0)
+# (V 2.2.1)
 # By: James Denbow
 
 # TABLE OF CONTENTS ##########################################################################################################################
@@ -9,6 +9,19 @@
 #    LINE 00 - OBJECTS
 #       + LINE 00 - Player [Represents User, CPUs & Dealer to manage hand, money, etc.]
 #       + LINE 00 - Deck [Allows for deck management including dealing & shuffling]
+#
+#    LINE 00 - HELPER FUNCTIONS
+#       + LINE 00 - chart_strategy_calc() [Calculates the appropriate move based on the Blackjack Chart Strategy, used in recommendations and expert CPUs]
+#       + LINE 00 - end_round() [End of Round manager, determines win / loss and displays appropriate message, also handles updating of money]
+#       + LINE 00 - exitFunc() [Function called when user hits the exit button, closes TK instance and shuts down all processes]
+#       + LINE 00 - playerhit() [Function called when player asks for hit, calls deck to deal card and updates screen with appropriate card image]
+#       + LINE 00 - cpu_beginner() [Function controls the game logic of Beginner level CPUs]
+#       + LINE 00 - cpu_normal() [Function controls the game logic of Normal level CPUs]
+#       + LINE 00 - cpu_expert() [Function controls the game logic of Expert level CPUs]
+#       + LINE 00 - simulator() [Used to similuate possible outcomes after each move to calculate probable outcomes]
+#       + LINE 00 - statistic_calc() [Calculates and displays all statistics to player, along with playername and current bet]
+#       + LINE 00 - busted() [Called when a player reaches a score of 21 or higher to remove action buttons to prevent further action]
+#       + LINE 00 - doubleDown() [Called when the player hits the double button, handles the double down case fully]
 #
 #    LINE 00 - BLACKJACK ROUND MANAGER
 #
@@ -65,40 +78,41 @@ class Deck:
         cardsuit = 'NA'
         del self.standard_deck[0]
         current_player.current_hand.append(card)
-        if card == 2:
+        if card == 2 and len(self.deck2) != 0:
             cardsuit = random.choice(self.deck2)
             self.deck2.remove(cardsuit)
-        elif card == 3:
+        elif card == 3 and len(self.deck3) != 0:
             cardsuit = random.choice(self.deck3)
             self.deck3.remove(cardsuit)
-        elif card == 4:
+        elif card == 4 and len(self.deck4) != 0:
             cardsuit = random.choice(self.deck4)
             self.deck4.remove(cardsuit)
-        elif card == 5:
+        elif card == 5 and len(self.deck5) != 0:
             cardsuit = random.choice(self.deck5)
             self.deck5.remove(cardsuit)
-        elif card == 6:
+        elif card == 6 and len(self.deck6) != 0:
             cardsuit = random.choice(self.deck6)
             self.deck6.remove(cardsuit)
-        elif card == 7:
+        elif card == 7 and len(self.deck7) != 0:
             cardsuit = random.choice(self.deck7)
             self.deck7.remove(cardsuit)
-        elif card == 8:
+        elif card == 8 and len(self.deck8) != 0:
             cardsuit = random.choice(self.deck8)
             self.deck8.remove(cardsuit)
-        elif card == 9:
+        elif card == 9 and len(self.deck9) != 0:
             cardsuit = random.choice(self.deck9)
             self.deck9.remove(cardsuit)
-        elif card == 10:
+        elif card == 10 and len(self.deck10) != 0:
             cardsuit = random.choice(self.deck10)
             self.deck10.remove(cardsuit)
-        elif card == 11 or card == 1:
+        elif card == 11 or card == 1 and len(self.decka) != 0:
             cardsuit = random.choice(self.decka)
             self.decka.remove(cardsuit)
         current_player.current_hand_card.append(cardsuit)
 
 ##############################################################################################################################################
 
+# HELPER FUNCTIONS ###########################################################################################################################
 #Returns suggested move based on Chart Strategy
 def chart_strategy_calc(current_player, upcard):
     #If double return 'd'
@@ -429,11 +443,10 @@ def simulator(round_deck, downcard, playerlist, index_player, upcard, condition,
     return win_count, push_count
 
 
-def statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer):
+def statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer, curbet):
     unknown_deck = round_deck.standard_deck
     if downcard != 0:
         unknown_deck.append(downcard)
-    curbet = "Bet - $" + str(playerlist[index_player].current_bet)
 
     #Calculate bust on hit
     bustable_count = 0
@@ -502,9 +515,19 @@ def statistic_calc(round_deck, downcard, playerlist, index_player, upcard, deale
     exitButton.grid(row=0, column=2, padx=(10,10))
 
 
-def busted(user, hitButton):
+def busted(user, hitButton, splitButton, doubleButton):
     if sum(user.current_hand) >= 21:
         hitButton.grid_remove()
+        splitButton.grid_remove()
+        doubleButton.grid_remove()
+
+def doubleDown(round_deck, downcard, playerlist, index_player, current_player, frame, upcard):
+    bet = current_player.current_bet
+    money = current_player.money
+    if money >= bet:
+        current_player.money -= bet
+        current_player.current_bet = 2 * bet
+        playerhit(round_deck, downcard, playerlist, index_player, current_player, frame, upcard)
 
 # BLACKJACK ROUND MANAGER ####################################################################################################################
 
@@ -540,6 +563,7 @@ def blackjack_round(playerlist):
             bet_button.wait_variable(wait_bet)
 
             i.current_bet = bet.get()
+            curbet = "Bet - $" + str(bet.get())
             i.money -= bet.get()
 
     #Initialize Dealer
@@ -650,18 +674,22 @@ def blackjack_round(playerlist):
         player_count += 1
 
     #Players turn
-    statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer)
+    statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer, curbet)
     #Player action button
     actionFrame = Frame(window, width=230, height=215, bg="#43ac35")
     actionFrame.place(anchor=SW, relx=0.01, rely=0.95)
-    hitButton = Button(actionFrame, text="HIT", bg='green', fg='white', font="none 20 bold", width=13, command=lambda: [playerhit(round_deck, downcard, playerlist, index_player, playerlist[index_player], playercards, upcard), busted(playerlist[index_player], hitButton), statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer)])
+    hitButton = Button(actionFrame, text="HIT", bg='green', fg='white', font="none 20 bold", width=13, command=lambda: [playerhit(round_deck, downcard, playerlist, index_player, playerlist[index_player], playercards, upcard), busted(playerlist[index_player], hitButton, splitButton, doubleButton), statistic_calc(round_deck, downcard, playerlist, index_player, upcard, dealer, curbet)])
     hitButton.grid(row=0)
     wait_stay = IntVar()
-    stayButton = Button(actionFrame, text="STAY", bg='red', fg='white', font="none 20 bold", width=13, command=lambda: [wait_stay.set(1),hitButton.grid_remove(),stayButton.grid_remove()])
+    stayButton = Button(actionFrame, text="STAY", bg='red', fg='white', font="none 20 bold", width=13, command=lambda: [wait_stay.set(1), hitButton.grid_remove(), stayButton.grid_remove(), doubleButton.grid_remove(), splitButton.grid_remove()])
     stayButton.grid(row=1)
+    doubleButton = Button(actionFrame, text="DOUBLE", bg='blue', fg='white', font="none 20 bold", width=13, command=lambda: [doubleDown(round_deck, downcard, playerlist, index_player, playerlist[index_player], playercards, upcard), wait_stay.set(1), hitButton.grid_remove(), stayButton.grid_remove(), doubleButton.grid_remove(), splitButton.grid_remove()])
+    if playerlist[index_player].money >= playerlist[index_player].current_bet:
+        doubleButton.grid(row=2)
+    splitButton = Button(actionFrame, text="SPLIT", bg='purple', fg='white', font="none 20 bold", width=13, command=lambda: [wait_stay.set(1), hitButton.grid_remove(), stayButton.grid_remove(), doubleButton.grid_remove(), splitButton.grid_remove()])
+    if playerlist[index_player].current_hand[0] == playerlist[index_player].current_hand[1]:
+        splitButton.grid(row=3)
     stayButton.wait_variable(wait_stay)
-    #doubleButton = Button(actionFrame, text="DOUBLE", bg='blue', fg='white', font="none 20 bold", width=13).grid(row=2)
-    #splitButton = Button(actionFrame, text="SPLIT", bg='purple', fg='white', font="none 20 bold", width=13).grid(row=3)
 
     #Finish players turns
     player_count += 1
