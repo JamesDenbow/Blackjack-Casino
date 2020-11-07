@@ -4,35 +4,35 @@
 
 # TABLE OF CONTENTS ##########################################################################################################################
 #
-#    LINE 00 - IMPORTS
+#    LINE 39 - IMPORTS
 #
-#    LINE 00 - OBJECTS
-#       + LINE 00 - Player [Represents User, CPUs & Dealer to manage hand, money, etc.]
-#       + LINE 00 - Deck [Allows for deck management including dealing & shuffling]
+#    LINE 47 - OBJECTS
+#       + LINE 48 - Player [Represents User, CPUs & Dealer to manage hand, money, etc.]
+#       + LINE 59 - Deck [Allows for deck management including dealing & shuffling]
 #
-#    LINE 00 - HELPER FUNCTIONS
-#       + LINE 00 - chart_strategy_calc() [Calculates the appropriate move based on the Blackjack Chart Strategy, used in recommendations and expert CPUs]
-#       + LINE 00 - end_round() [End of Round manager, determines win / loss and displays appropriate message, also handles updating of money]
-#       + LINE 00 - exitFunc() [Function called when user hits the exit button, closes TK instance and shuts down all processes]
-#       + LINE 00 - playerhit() [Function called when player asks for hit, calls deck to deal card and updates screen with appropriate card image]
-#       + LINE 00 - cpu_beginner() [Function controls the game logic of Beginner level CPUs]
-#       + LINE 00 - cpu_normal() [Function controls the game logic of Normal level CPUs]
-#       + LINE 00 - cpu_expert() [Function controls the game logic of Expert level CPUs]
-#       + LINE 00 - simulator() [Used to similuate possible outcomes after each move to calculate probable outcomes]
-#       + LINE 00 - statistic_calc() [Calculates and displays all statistics to player, along with playername and current bet]
-#       + LINE 00 - busted() [Called when a player reaches a score of 21 or higher to remove action buttons to prevent further action]
-#       + LINE 00 - doubleDown() [Called when the player hits the double button, handles the double down case fully]
+#    LINE 114 - HELPER FUNCTIONS
+#       + LINE 116 - chart_strategy_calc() [Calculates the appropriate move based on the Blackjack Chart Strategy, used in recommendations and expert CPUs]
+#       + LINE 222 - end_round() [End of Round manager, determines win / loss and displays appropriate message, also handles updating of money]
+#       + LINE 304 - exitFunc() [Function called when user hits the exit button, closes TK instance and shuts down all processes]
+#       + LINE 310 - playerhit() [Function called when player asks for hit, calls deck to deal card and updates screen with appropriate card image]
+#       + LINE 337 - cpu_beginner() [Function controls the game logic of Beginner level CPUs]
+#       + LINE 346 - cpu_normal() [Function controls the game logic of Normal level CPUs]
+#       + LINE 362 - cpu_expert() [Function controls the game logic of Expert level CPUs]
+#       + LINE 370 - simulator() [Used to similuate possible outcomes after each move to calculate probable outcomes]
+#       + LINE 445 - statistic_calc() [Calculates and displays all statistics to player, along with playername and current bet]
+#       + LINE 517 - busted() [Called when a player reaches a score of 21 or higher to remove action buttons to prevent further action]
+#       + LINE 524 - doubleDown() [Called when the player hits the double button, handles the double down case fully]
 #
-#    LINE 00 - BLACKJACK ROUND MANAGER
+#    LINE 533 - BLACKJACK ROUND MANAGER
 #
-#    LINE 00 - GAME MANAGEMENT & DISPLAY FUNCTIONS
-#       + LINE 00 - game_manager() [Tracks player money, allowing play till money is out]
-#       + LINE 00 - initialize_game() [Creates the ordered list of players when a new game starts]
-#       + LINE 00 - menu2() [Second page of new game menu, allows position and starting money selection]
-#       + LINE 00 - menu() [First page of new game menu, allows for CPU status selection and naming of players]
-#       + LINE 00 - splash_screen() [Displays Splash Screen on launch]
+#    LINE 728 - GAME MANAGEMENT & DISPLAY FUNCTIONS
+#       + LINE 730 - game_manager() [Tracks player money, allowing play till money is out]
+#       + LINE 754 - initialize_game() [Creates the ordered list of players when a new game starts]
+#       + LINE 795 - menu2() [Second page of new game menu, allows position and starting money selection]
+#       + LINE 842 - menu() [First page of new game menu, allows for CPU status selection and naming of players]
+#       + LINE 896 - splash_screen() [Displays Splash Screen on launch]
 #
-#    LINE 00 - MAIN FUNCTION
+#    LINE 901 - MAIN FUNCTION
 #
 ##############################################################################################################################################
 
@@ -109,7 +109,6 @@ class Deck:
             cardsuit = random.choice(self.decka)
             self.decka.remove(cardsuit)
         current_player.current_hand_card.append(cardsuit)
-
 ##############################################################################################################################################
 
 # HELPER FUNCTIONS ###########################################################################################################################
@@ -479,7 +478,7 @@ def statistic_calc(round_deck, downcard, playerlist, index_player, upcard, deale
         recom == "SPLIT"
     else:
         recom == "ERROR"
-    recom_out = " Reccomend: " + recom
+    recom_out = " Recommend: " + recom
 
     h_return_perc_w, h_return_perc_d = simulator(round_deck, downcard, playerlist, index_player, upcard, 'h', dealer)
     s_return_perc_w, s_return_perc_d = simulator(round_deck, downcard, playerlist, index_player, upcard, 's', dealer)
@@ -521,6 +520,7 @@ def busted(user, hitButton, splitButton, doubleButton):
         splitButton.grid_remove()
         doubleButton.grid_remove()
 
+
 def doubleDown(round_deck, downcard, playerlist, index_player, current_player, frame, upcard):
     bet = current_player.current_bet
     money = current_player.money
@@ -528,9 +528,9 @@ def doubleDown(round_deck, downcard, playerlist, index_player, current_player, f
         current_player.money -= bet
         current_player.current_bet = 2 * bet
         playerhit(round_deck, downcard, playerlist, index_player, current_player, frame, upcard)
+##############################################################################################################################################
 
 # BLACKJACK ROUND MANAGER ####################################################################################################################
-
 #Begins and manages the rounds of blackjack, makes calls to the game logic
 def blackjack_round(playerlist):
     round_deck = Deck()
@@ -686,9 +686,9 @@ def blackjack_round(playerlist):
     doubleButton = Button(actionFrame, text="DOUBLE", bg='blue', fg='white', font="none 20 bold", width=13, command=lambda: [doubleDown(round_deck, downcard, playerlist, index_player, playerlist[index_player], playercards, upcard), wait_stay.set(1), hitButton.grid_remove(), stayButton.grid_remove(), doubleButton.grid_remove(), splitButton.grid_remove()])
     if playerlist[index_player].money >= playerlist[index_player].current_bet:
         doubleButton.grid(row=2)
-    splitButton = Button(actionFrame, text="SPLIT", bg='purple', fg='white', font="none 20 bold", width=13, command=lambda: [wait_stay.set(1), hitButton.grid_remove(), stayButton.grid_remove(), doubleButton.grid_remove(), splitButton.grid_remove()])
-    if playerlist[index_player].current_hand[0] == playerlist[index_player].current_hand[1]:
-        splitButton.grid(row=3)
+    #splitButton = Button(actionFrame, text="SPLIT", bg='purple', fg='white', font="none 20 bold", width=13, command=lambda: [wait_stay.set(1), hitButton.grid_remove(), stayButton.grid_remove(), doubleButton.grid_remove(), splitButton.grid_remove()])
+    #if playerlist[index_player].current_hand[0] == playerlist[index_player].current_hand[1]:
+        #splitButton.grid(row=3)
     stayButton.wait_variable(wait_stay)
 
     #Finish players turns
@@ -723,11 +723,9 @@ def blackjack_round(playerlist):
     NextRoundButton.wait_variable(endRound_wait)
 
     return player_money, temp_playerlist
-
 ##############################################################################################################################################
 
 # GAME MANAGEMENT & DISPLAY FUNCTIONS ########################################################################################################
-
 #The main game function, controls the flow of the game
 def game_manager(playerlist, playerMoneyTracker):
     #Allows the player to continue playing rounds of blackjack until player is out of money
@@ -750,7 +748,6 @@ def game_manager(playerlist, playerMoneyTracker):
     NextRoundButton.wait_variable(endRound_wait)
 
     sys.exit()
-
 
 
 #Initializes the playerlist for the upcoming game
@@ -899,7 +896,6 @@ def menu():
 def splash_screen():
     #Splash Screen button, when pressed it open menu for new game
     startButton = Button(window, text="Start New Game", font="none 23 bold", command=menu).place(relx=0.444, rely=0.7)
-
 ##############################################################################################################################################
 
 # MAIN FUNCTION ##############################################################################################################################
